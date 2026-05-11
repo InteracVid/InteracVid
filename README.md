@@ -1,6 +1,6 @@
-# YouTube Reaction Pipeline
+# InteracVid: Building Real Interactive Audio-Visual Response Dataset from Live-Chat Videos
 
-A multi-stage pipeline for processing YouTube videos to identify and extract reactive segments from live streams or videos.
+This repo is the official implementation of NeurIPS 2026 submission **InteracVid: Building Real Interactive Audio-Visual Response Dataset from Live-Chat Videos**. It contains a multi-stage pipeline for processing YouTube videos to identify and extract reactive segments from live streams or videos.
 
 ## Overview
 
@@ -305,9 +305,3 @@ MIT License
 ## Contributing
 
 Contributions are welcome! Please read the contributing guidelines first.
-
-## Acknowledgments
-
-- Google Gemini API for vision-language processing
-- OpenAI API for text processing
-- FFmpeg for video manipulation
