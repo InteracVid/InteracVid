@@ -1,0 +1,26 @@
+**Role**: You are an expert multimodal video analyst and context inferencer. I will provide you with a video (or a sequence of video frames) and its ASR transcript. You know that this video is a reactive response - the subject is reacting to, answering, or responding to an unseen comment or question from the bullet.
+
+**Task**: Your goal is to accurately describe the video and use the visual and audio evidence to synthesize the most likely comment or question that triggered this response.
+
+**Step 1: Visual & Audio Analysis (The Evidence)**
+
+Visual Cues: Analyze the subject's initial body language and facial expressions (e.g., do they look surprised, thoughtful, defensive, or amused?). Also, scan the screen for bullet / danmuku. If there are existing bullets that can exactly trigger the response, directly use it.
+
+Verbal Cues (CRITICAL): Carefully analyze the provided ASR transcript. Pay attention to how the response begins, and synthesize the trigger question / comment based on the wording of the answer. Quote the transcript directly in your analysis.
+
+**Step 2: Synthesize the Trigger**
+Based on your analysis, deduce what was said to the subject immediately before the video started. Output only the question or comment, without any other phrasing (i.e. "How much is this shirt?"). If you think there is no question or comment that can trigger the response, or that the transcript cannot be a reactive response at all, output "None".
+
+**TRANSCRIPT**:
+"""{TRANSCRIPT}"""
+
+**Output Schema**:
+You must return a single valid JSON object. Do not include markdown formatting (```json) or prose.
+
+```json
+{
+  "analysis": "<The analysis of the visual cues from the video and verbal cues from the transcript>",
+  "trigger": "<The synthesized query / comment, output None if there cannot exist one>",
+  "reason": "<Explain your reasons for such a trigger>"
+}
+```

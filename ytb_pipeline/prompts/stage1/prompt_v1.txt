@@ -1,0 +1,30 @@
+SRT_DATA:
+"""{srt}"""
+
+You are an expert AI transcription editor. Your task is to process the above raw SRT subtitle data into a structured JSON transcript.
+
+**Instructions:**
+1.  **Sentence Reconstruction:** *Merge or split* the fragmented subtitle lines into complete, grammatically correct sentences. Punctuation in ASR is often missing; infer sentence boundaries based on context and natural speech patterns.
+2.  **Timestamp Alignment:**
+    - `start`: The start timestamp of the sentence. It can be the time of the *first* subtitle fragment. If the sentence starts from the middle of a fragment, infer the starting time.
+    - `end`: The end timestamp of sentence. It can be the time of the *last* subtitle fragment. If the sentence ends in the middle of a fragment, infer the ending time.
+3.  **ASR Error Correction:** - Fix obvious phonetic misinterpretations and non-existent vocabulary (e.g., change "starf fruit" to "starfruit", "tiank top" to "tank top").
+    - Fix capitalization (e.g., names like "sam", "luna" should be "Sam", "Luna").
+    - **Constraint:** Do not paraphrase or summarize. Preserve the original speaker's intent and word choice, only correcting technical transcription errors.
+4.  **Formatting:**
+    - Output *strictly* valid JSON.
+    - Remove the special codes (e.g. "&nbsp;").
+    - Use the following schema for every object: `{"start": "string", "end": "string", "text": "string"}`.
+
+**Example Output:**
+
+You must return a single valid JSON object. Do not include markdown formatting (```json) or prose.
+```
+[
+  {
+    "start": "00:00:00,320",
+    "end": "00:00:05,080",
+    "text": "Hi guys, hello hello, got to wait for more."
+  }
+]
+```

@@ -1,0 +1,64 @@
+JSON_DATA:
+"""{json}"""
+
+You are an expert AI data annotator specializing in live stream transcript analysis. Your task is to classify each sentence in a provided transcript into one of three categories: `reactive_response`, `proactive_monologue`, or `continuation`.
+
+**Important Context Rules:**
+1. **Holistic View & ASR Tolerance:** Treat the JSON array as a continuous transcript. Look past ASR errors, phonetic misspellings, and stuttering to grasp the true intent of the speaker using the surrounding context.
+2. **The "Evident Query" Rule:** Streamers constantly talk *at* their audience ("How are you guys?", "Watch this, chat", "You guys are crazy"). These are PROACTIVE MONOLOGUES. A `reactive_response` strictly requires an *obvious, reverse-engineerable external stimulus*. If you cannot easily guess what the specific chat message or alert was, it is NOT a reactive response.
+
+**Input:** The JSON array of sentence objects.
+**Output:** The same JSON array with two new fields `"type"` and `"reason"`.
+
+### Ultra-Strict Classification Definitions
+
+**1. REACTIVE RESPONSE (`reactive_response`) [ULTRA-STRICT]**
+* **Definition:** A direct answer or reaction to a *specific, evident* chat message, user, or alert. 
+* **Key Indicators:**
+  * **The Reverse Engineering Test:** You must be able to confidently fill in this blank: *The viewer just typed/did: [X].* * *Example:* "No, I play on PC." (Evident query: "Are you on console?") -> **Reactive**
+    * *Example:* "Thanks for the $5, Sarah!" (Evident action: Sarah tipped $5) -> **Reactive**
+    * *Example:* "You guys are quiet today." (No specific query, just a general observation) -> **Proactive**
+  * **The Pivot:** A sudden break in thought to address that specific, reconstructable query.
+
+**2. CONTINUATION (`continuation`) [ULTRA-STRICT]**
+* **Definition:** An unbroken, direct semantic flow from the *immediately preceding* sentence. It is functionally the second half of a single thought.
+* **Key Indicators:**
+  * **Dependency:** If read in a completely isolated vacuum, it makes no sense grammatically or logically (e.g., "Because I didn't have enough mana.", "...and then he just ran away.").
+  * **Do NOT use for broad topic continuation:** If the speaker finishes a complete thought, takes a breath, and starts a *new* standalone sentence about the exact same topic, that is a NEW monologue or response, NOT a continuation.
+  * **Unbreakable Link:** The semantic glue must be extremely tight. 
+
+**3. PROACTIVE MONOLOGUE (`proactive_monologue`) [DEFAULT]**
+* **Definition:** The catch-all for any self-initiated thought, game commentary, or general audience address that fails the strict "Evident Query" test.
+* **Key Indicators:**
+  * **General Audience Engagement:** "What do you guys think?", "Let me show you this trick." (Proactive performances).
+  * **Game Commentary & Reactions:** "Oh my god, I died!", "I need to reload."
+  * **Storytelling & Train of Thought:** Initiating a new angle on a topic, telling a story, or thinking out loud.
+
+### Decision Logic (Chain of Thought)
+
+Process the transcript sequentially. For every sentence, apply this ruthless filtering:
+
+1. **Check CONTINUATION (The Unbreakable Link Test):**
+   * Is this functionally the exact same specific thought as the previous sentence? Is it grammatically or logically dependent on the immediate predecessor?
+   * *If YES -> Label `continuation`.*
+   * *If NO (it can stand on its own as a complete thought) -> Move to step 2.*
+
+2. **Check REACTIVE (The Evident Query Test):**
+   * Can I obviously and evidently reconstruct the exact question or comment the viewer just typed?
+   * *If YES -> Label `reactive_response`. (In your reason, state what the evident query was).*
+   * *If NO (it's just a general address, rhetorical question, or observation) -> Move to step 3.*
+
+3. **Default to PROACTIVE (The Self-Initiated/Game Test):**
+   * If it fails the unbroken link test AND the evident query test, it lands here.
+   * *Label `proactive_monologue`.*
+
+### JSON Output Schema
+[
+  {
+    "start": "00:00:00",
+    "end": "00:00:05",
+    "text": "original text here",
+    "type": "reactive_response",
+    "reason": "Passes the Evident Query test: The viewer obviously asked if the streamer was playing on a controller."
+  }
+]

@@ -1,0 +1,92 @@
+JSON_DATA:
+"""{json}"""
+
+You are an expert AI data annotator specializing in live stream transcript analysis. Your task is to classify each sentence in the provided transcript into one of three categories: `reactive_response`, `proactive_monologue`, or `continuation`.
+
+**Input:** The JSON array of sentence objects.
+**Output:** The same JSON array with two new fields `"type"` and `"reason"` added to each object.
+
+### Classification Definitions
+
+**1. CONTINUATION (`continuation`)**
+
+* **Definition:** This sentence is part of the same "train of thought" or narrative flow as the immediately preceding sentence.
+* **Key Indicator:** If you read this sentence in isolation, it might lack context, or it feels like the second half of a paragraph. It does **not** introduce a brand new distinct topic or interaction.
+* **Grammar Note:** It can be a grammatically complete sentence but is semantically glued to the previous one.
+* **Temporal Hard Constraint:** The start time of this sentence **must** follow immediately after the end of the previous one (**within 1 second**). If the pause is longer than 1 second, do not label as continuation, even if the topic is the same.
+* *Examples:*
+* (Prev: "I love spicy food.") -> **"But it hurts my stomach."** (Continuation)
+* (Prev: "Sam ran away.") -> **"He is such a bad dog."** (Continuation)
+
+
+
+**2. REACTIVE RESPONSE (`reactive_response`)**
+
+* **Definition:** This sentence marks the **start** of a new interaction specifically with the **human audience** (chat, specific users, or alerts).
+* **Key Indicator:** The streamer's attention shifts from their own thoughts/gameplay to an external social trigger.
+* **Implicit Q&A:** This includes answering "phantom questions." If the streamer provides specific info (e.g., "I am 24 years old") without a prior topic setup, assume they are reading a chat message you cannot see.
+* **Grammar Note:** The external trigger can happen in mid-sentence, causing the sentence to be grammatically incomplete.
+* *Example:* "I was making... **Oh, It is like...**" (The shift happens mid-thought).
+
+
+* *Examples:*
+* **Direct Q&A:** "Yes I am 20."
+* **Reading Chat:** "'I love your dress', thanks!"
+* **Acknowledgements:** "Thanks for the $5 donation!"
+
+
+
+**3. PROACTIVE MONOLOGUE (`proactive_monologue`)**
+
+* **Definition:** This sentence marks the **start** of a topic initiated by the streamer themselves, or a reaction to the **game environment** (not the chat).
+* **Key Indicator:** A sentence that naturally fits in context without external social cause, or a "reset" in the conversation flow.
+* **Game Events:** Reactions to the game (e.g., "Oh no, I died!", "Take that, boss!") are considered Proactive Monologue because they are part of the content creation/performance, not a direct social reply to a human.
+* **Resumptions:** If a speaker resumes a previous topic after a silence of **> 1 second**, classify it here (as a "Reset/Resume") rather than Continuation, due to the temporal constraint.
+* *Examples:*
+* **Storytelling:** "So, let me tell you about what happened yesterday."
+* **Game Commentary:** "I need to find a weapon." / "Whoa, that explosion was loud."
+* **Housekeeping:** "Let me just adjust this mic."
+
+
+
+### Decision Logic (Chain of Thought)
+
+Process the sentences **sequentially**. For every sentence, ask these questions in this specific order:
+
+1. **Check CONTINUATION (Strict):**
+* Is the start time within **1 second** of the previous end time?
+* *AND* does the sentence semantically expand/conclude the immediately previous sentence?
+* *If YES to BOTH -> Label `continuation`.*
+
+
+2. **If NO, Check REACTIVE:**
+* Is the speaker responding to a new stimulus from the **Chat, Audience, or Alerts**?
+* Does the sentence imply an answer to an unread chat message (Implicit Q&A)?
+* *(Note: Do NOT include reactions to Game Events here).*
+* *If YES -> Label `reactive_response`.*
+
+
+3. **If NO to both, Default to PROACTIVE:**
+* It must be a self-initiated new topic, a reaction to the game logic, or a resumption of a thought after a long pause (>1s).
+* *Label `proactive_monologue`.*
+
+
+4. **Reasoning:**
+* Briefly explain which rule triggered the decision.
+
+
+
+### JSON Output Schema
+
+```json
+[
+  {
+    "start": "00:00:00",
+    "end": "00:00:05",
+    "text": "original text here",
+    "type": "reactive_response",
+    "reason": "Responds to a user question about age."
+  }
+]
+
+```

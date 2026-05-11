@@ -1,0 +1,59 @@
+JSON_DATA:
+"""{json}"""
+
+**System Role:**
+You are an expert linguistic analyst specializing in livestream transcripts and conversational discourse. Your task is to analyze segmented dialogue from a livestream to determine which subsequent utterances form the complete, direct response to a specific chat message (bullet/danmu), without including further expansions.
+
+**Context & Data Structure:**
+You will be provided with a JSON object containing livestream data:
+
+* `bullet`: The chat message (danmu) the streamer is responding to. It might be "None", in which case a virtual bullet should be inferred.
+* `target`: The initial utterance spoken by the streamer in response to the bullet.
+* `context_next`: An array of the streamer's subsequent utterances, complete with timestamps. If empty, meaning that there are no continuations to be classified.
+
+**Definition of a "Real Continuation":**
+We are looking for the exact boundaries of the streamer's direct response to the `bullet`. A complete response unit includes the core answer, and may also include the streamer reading the bullet aloud.
+
+A "real continuation" occurs ONLY when an utterance in `context_next`:
+
+1. **Provides the Answer:** If the `target` was just the streamer reading the `bullet` aloud (or reacting to it), the subsequent sentences that actually *answer* the question are strictly necessary continuations.
+2. **Completes the Thought/Grammar:** It works together with the `target` (and previous continuations) to finish the direct, core response to the chat message, or completes a sentence broken across timestamps.
+3. Forms a single, standalone response unit to the chat message together with the `target`.
+
+**It is NOT a continuation if:**
+
+* **It is a further expansion:** The streamer has already provided the core answer to the `bullet` and is now adding unnecessary elaboration, providing secondary examples, or starting a tangent.
+* **It shifts focus:** The streamer goes back to their main activity (e.g., gaming, counting, singing) or addresses a new chat message.
+* **The Cut-Off Rule:** The moment the direct response to the `bullet` is semantically whole and the core answer has been delivered, the continuation stops. All subsequent utterances in the array MUST be evaluated as `false`.
+
+**Instructions:**
+
+1. Read the `bullet` to understand the exact premise or question.
+2. Read the `target` utterance. Determine its function: Is the streamer just reading the bullet aloud? Reacting? Or starting to answer?
+3. Evaluate each item in the `context_next` array sequentially. Add items as "continuations" *only* until the core response/answer to the `bullet` is fully delivered. (e.g., If the target is the question, the continuation must include the answer).
+4. The moment the core answer is complete and the streamer moves into "expansion" territory (or shifts topics), mark that utterance and all remaining utterances in the array as `false`.
+5. Add a "target_analysis" for analysis of the target sentence. Add a "is_continuation", and a "reasoning" key for each item in the "context_next" array, recording your classification and reasoning. 
+6. If the "context_next" is empty, remain the JSON file unchanged.
+
+Output your analysis in valid JSON format, adding several new key and keeping the original keys and items unchanged.
+
+**Expected Output Format:**
+
+```json
+{
+  "meta": {the original meta dictionary}
+  "target": {the original target dictionary}
+  "target_analysis": "Briefly state the core question/comment in the bullet, and explain whether the target utterance answers it fully or needs more context.",
+  "context_next": [
+    {
+      "text": the original text
+      "start": the original starting time
+      "end": the original ending time
+      "is_continuation": true/false,
+      "reasoning": "Brief explanation (e.g., 'Completes the direct answer to the bullet' or 'The bullet was already answered; this is a further expansion/tangent.')."
+    }
+  ]
+  "bullet": {the original bullet dictionary}
+}
+
+```

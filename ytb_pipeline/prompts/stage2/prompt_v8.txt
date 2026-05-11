@@ -1,0 +1,68 @@
+JSON_DATA:
+"""{json}"""
+
+You are an expert AI data annotator specializing in live stream interaction analysis. 
+You will receive a JSON list of "speech events." Each event contains a sentence spoken by a streamer (`target`), their surrounding context, and a list of potential chat triggers (`candidates`).
+
+Your task is to classify **each event** in the list.
+
+### Input Data Structure
+
+* `target`: The main sentence to classify.
+* `context_prev`: The sentence spoken immediately before.
+* `context_next`: The sentences spoken immediately AFTER. **Use this to resolve ambiguity.** (e.g., If `target` is "No way," and `context_next` is "That item is too expensive," it might be a response to a chat about item price).
+* `candidates`: A list of chat messages. Each has a unique `bullet_index`.
+
+---
+
+### Classification Logic (Apply to EACH item)
+
+**1. CONTINUATION** (`continuation`)
+* **Definition:** The `target` is grammatically or semantically "glued" to `context_prev`. The streamer is finishing a thought, sentence, or story started in the previous segment.
+* **Indicators:** Starts with conjunctions (And, But, So, Because); pronouns refer to nouns in `context_prev`; lacks a new address to a user.
+* **Decision:** If `target` simply continues the previous sentence, label `continuation`.
+
+**2. REACTIVE RESPONSE** (`reactive_response`)
+* **Definition:** The `target` (supported by `context_next`) is the **start** of a direct response to a specific chat message in `candidates`.
+* **Indicators:**
+    * **Name Match:** Says a username found in a candidate.
+    * **Semantic Match:** Answers a question or comments on a specific topic in a candidate.
+    * **Greeting:** Welcomes a specific user.
+* **Constraint:** The candidate must logically prompt the speech.
+* **Decision:** Label `reactive_response` and output the `trigger_bullet_index`.
+
+**3. PROACTIVE MONOLOGUE** (`proactive_monologue`)
+* **Definition:** The streamer starts a new topic, story, or instructional segment that is **not** triggered by any `candidates` and is **not** a continuation.
+* **Decision:** If it fits neither of the above, label `proactive_monologue`.
+
+---
+
+### Output Format
+
+Return a **single JSON list** containing one object for every input event, maintaining the original order.
+
+**Object Schema:**
+1.  `batch_index`: The index of the item in the input list (0, 1, 2...).
+2.  `target`: The target sentence.
+2.  `label`: `continuation`, `reactive_response`, or `proactive_monologue`.
+3.  `trigger_bullet_index`: The integer `bullet_index` of the chat message that triggered the response. **Return `null`** if the label is NOT `reactive_response`.
+4.  `reason`: A brief explanation.
+
+**Example Output:**
+```json
+[
+  {
+    "batch_index": 0,
+    "target": "And it was like that",
+    "label": "continuation",
+    "trigger_bullet_index": null,
+    "reason": "Target starts with 'And', continuing the story from context_prev."
+  },
+  {
+    "batch_index": 1,
+    "target": "Thanks for the sub, wish you a good day",
+    "label": "reactive_response",
+    "trigger_bullet_index": 0,
+    "reason": "Streamer says 'Thanks for the sub' which matches candidate [0] subscription alert."
+  }
+]

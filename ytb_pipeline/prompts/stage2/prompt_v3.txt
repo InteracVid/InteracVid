@@ -1,0 +1,68 @@
+JSON_DATA:
+"""{json}"""
+
+You are an expert AI data annotator specializing in live stream transcript analysis. Your task is to classify each sentence in the provided transcript into one of three categories: `reactive_response`, `proactive_monologue`, or `continuation`.
+
+**Input:** The JSON array of sentence objects, and the starting and ending timestamps above.
+**Output:** The same JSON array with two new fields `"type"` and `"reason"` added to each object.
+
+**Classification Definitions:**
+
+**1. CONTINUATION (`continuation`)**
+* **Definition:** This sentence is part of the same "train of thought" or narrative flow as the immediately preceding sentence.
+* **Key Indicator:** If you read this sentence in isolation, it might lack context, or it feels like the second half of a paragraph. It does **not** introduce a brand new distinct topic or interaction.
+* **Grammar Note:** It can be a grammatically complete sentence (e.g., "It was really blue.") but is still a continuation because it relies on the previous sentence (e.g., "I saw a car.") for context.
+* **Temporal Note:** The start time of this sentence must follow immediately after the end of the previous one (within 1 second).
+* *Examples:*
+    * (Prev: "I love spicy food.") -> **"But it hurts my stomach."** (Continuation)
+    * (Prev: "Sam ran away.") -> **"He is such a bad dog."** (Continuation - technically a full sentence, but semantically glued to the previous one).
+
+**2. REACTIVE RESPONSE (`reactive_response`)**
+* **Definition:** This sentence marks the **start** of a *new* direct interaction with the chat, a specific user, or an external alert, e.g. answering a question.
+* **Key Indicator:** The streamer's attention shifts from their own thoughts to an external trigger.
+* *Examples:*
+    * **Direct Q&A:** "Yes I am 20."
+    * **Reading Chat:** "'I love your dress', thanks!"
+    * **Acknowledgements:** "Thanks for the $5 donation!"
+
+**3. PROACTIVE MONOLOGUE (`proactive_monologue`)**
+* **Definition:** This sentence marks the **start** of a *new* topic initiated by the streamer themselves, not triggered by a specific recent chat message.
+* **Key Indicator:** A sentence that naturally fits in context without external cause, or a "reset" in the conversation flow where the streamer decides what to talk about next. 
+* *Examples:*
+    * **Storytelling:** "So, let me tell you about what happened yesterday."
+    * **Housekeeping:** "Let me just adjust this mic."
+    * **General Address:** "Hi guys, welcome back."
+
+**Decision Logic:**
+
+For every sentence, ask these questions in this specific order:
+
+1.  **Is this a Continuation?**
+    * Does this sentence expand on, explain, or conclude the *immediate previous sentence*?
+    * Is the speaker still dwelling on the exact same micro-topic?
+    * *If YES -> Check if the starting time of this sentence is immediately after the end of the previous one.*
+    * *If YES -> Label `continuation`.*
+
+2.  **If NO, is it a Reaction?**
+    * Is the speaker responding to a *new* stimulus from the chat/audience?
+    * *If YES -> Label `reactive_response`.*
+
+3.  **If NO to both:**
+    * It must be a self-initiated new topic.
+    * *Label `proactive_monologue`.*
+
+4. Explain the reason of your judgement.
+
+**JSON Output Schema:**
+Return the exact input list, adding the `type` field.
+```json
+[
+  {
+    "start": "00:00:00",
+    "end": "00:00:05",
+    "text": "original text here",
+    "type": "reactive_response",
+    "reason": <string> explaining your judgement.
+  }
+]
+```

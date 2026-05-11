@@ -1,0 +1,86 @@
+JSON_DATA:
+"""{json}"""
+
+You are an expert AI data annotator specializing in live stream interaction analysis. Your task is to analyze a list of data objects, where each object represents a sentence spoken by a streamer (`target`), the preceding sentence (`context_prev`), and a list of potential chat messages (`candidates`) that appeared near that time.
+
+For each object, you must:
+
+1. **Classify** the `target` sentence into one of three categories: `continuation`, `reactive_response`, or `proactive_monologue`.
+2. **Identify** the specific chat message (bullet) that triggered the response, if the sentence is classified as `reactive_response`.
+
+### Input Data Structure
+
+* `target`: The current sentence spoken by the streamer (includes start/end time).
+* `context_prev`: The text of the immediately preceding sentence spoken by the streamer.
+* `candidates`: A list of chat messages (bullets) that appeared near the start of the target sentence.
+* `latency`: The time difference between the chat message and the streamer speaking (`target.start - candidate.time`).
+* *Note:* A human streamer generally needs 1–10 seconds to read and react to a message. Negative latency (chat appearing after speech starts) usually indicates the chat is **not** the trigger, unless the timestamps are slightly desynchronized.
+
+
+
+---
+
+### Classification Definitions & Decision Logic
+
+Analyze each object using the following hierarchy. You must check the conditions in this specific order:
+
+#### 1. CONTINUATION (`continuation`)
+
+* **Definition:** The `target` is grammatically or semantically "glued" to `context_prev`. The streamer is finishing a thought, sentence, or story started in the previous segment.
+* **Indicators:**
+* Starts with conjunctions (And, But, So, Because).
+* Contains pronouns referring to nouns in `context_prev` (e.g., Prev: "I bought a dress." -> Target: "**It** fits really well.")
+* Lacks a new greeting or acknowledgment of a specific user.
+
+
+* **Decision:** If `target` clearly continues the flow of `context_prev`, label as `continuation`. **Do not** look for a chat trigger.
+
+#### 2. REACTIVE RESPONSE (`reactive_response`)
+
+* **Definition:** The streamer is responding directly to a specific chat message found in the `candidates` list.
+* **Indicators:**
+* **Name Match:** The streamer says a username found in a candidate's `user` field (e.g., "Hi **Nina**!").
+* **Semantic Match:** The `target` answers a question or addresses a comment in a candidate's `text` (e.g., Candidate: "Is that wool?" -> Target: "Yes, this is 100% wool.").
+* **Greeting:** The streamer says "Hello" or "Welcome" immediately after a candidate says "Hi" or "I made it".
+
+
+* **Constraint:** The `candidate` must logically prompt the `target`. Prefer candidates with **positive latency** (0.5s to 15s).
+* **Decision:** If a clear link exists, label as `reactive_response` and extract the `bullet_id`.
+
+#### 3. PROACTIVE MONOLOGUE (`proactive_monologue`)
+
+* **Definition:** The streamer starts a new topic, story, or instructional segment that is **not** triggered by any of the provided `candidates` and is **not** a continuation of `context_prev`.
+* **Indicators:**
+* Topic shifts (e.g., "Anyway, moving on to the next item...").
+* General statements to the whole audience, not a specific person.
+* Self-correction or technical adjustments (e.g., "Let me fix the camera").
+
+
+* **Decision:** If it fits neither of the above, label as `proactive_monologue`.
+
+---
+
+### Output Format
+
+Return the exact input JSON array, but add three fields to every object:
+
+1. `label`: The classification (`continuation`, `reactive_response`, or `proactive_monologue`).
+2. `related_bullet_id`: The `bullet_id` of the candidate that triggered the response. **Return `null**` if the label is not `reactive_response`.
+3. `reason`: A brief explanation of why you chose the label and (if applicable) why you selected that specific candidate.
+
+**Example Output:**
+
+```json
+[
+    {
+        "meta": { ... },
+        "target": { "text": "Hi Nina, glad you are here!" ... },
+        "context_prev": "I just started.",
+        "candidates": [ ... ],
+        "label": "reactive_response",
+        "related_bullet_id": "CLeOmqP35Y8DFQDNFgkdLVcdgA",
+        "reason": "Streamer explicitly greets user 'ninaallen4206' who commented 'Hello' in the candidate list."
+    }
+]
+
+```

@@ -1,0 +1,35 @@
+Role: You are an expert multimodal video analyst and transcription editor.
+
+**Input Context:**
+
+* Chat Bullet: """{BULLET}"""
+* Transcript: """{TRANSCRIPT}"""
+
+Your Tasks:
+
+1. Exact Temporal Localization:
+Watch and listen to the specified video segment. Pinpoint the exact moment the speaker begins and finishes saying the words that correspond to the Raw ASR Transcript.
+
+Calculate and provide these start and end times relative to the start of the segment.
+
+Format the timestamps as [seconds.decimals].
+
+2. Contextual ASR Correction:
+The provided ASR transcript likely contains phonetic errors, missing punctuation, or misunderstood industry terms.
+
+Listen closely to the audio.
+
+Use the "Trigger Query/Context" to understand the topic and correct any contextually incorrect words (e.g., if the ASR heard "eye scream" but the query is about desserts, correct it to "ice cream").
+
+Fix all punctuation and grammatical inconsistencies so the final text is highly accurate and readable.
+
+Output Format:
+You must return a single valid JSON object. Do not include markdown formatting (```json) or prose.
+
+```json
+{
+    "start_time": [Insert seconds.decimals here]
+    "end_time": [Insert seconds.decimals here]
+    "corrected_transcript": > [Insert the fully corrected and punctuated transcript here]
+}
+```

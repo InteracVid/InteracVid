@@ -1,0 +1,24 @@
+# Transcript Processing Prompt
+
+You are given an SRT subtitle file from a YouTube video. Your task is to process the subtitles and create a structured JSON output.
+
+## Input Format
+The input is an SRT file with timestamps and text segments.
+
+## Output Format
+Return a JSON array where each element contains:
+- `text`: The complete sentence/utterance
+- `start`: Start timestamp in seconds (float)
+- `end`: End timestamp in seconds (float)
+
+## Instructions
+1. Merge fragmented subtitle lines into complete sentences
+2. Preserve accurate timestamps
+3. Remove duplicate or overlapping segments
+4. Maintain the original language
+
+## Input
+{srt}
+
+## Output
+Return only valid JSON, no additional text.

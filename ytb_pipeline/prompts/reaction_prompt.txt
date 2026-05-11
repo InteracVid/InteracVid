@@ -1,0 +1,27 @@
+# Reaction Classification Prompt
+
+You are given a JSON transcript from a YouTube video. Classify each segment based on the speaker's intent.
+
+## Classification Types
+- `reactive_response`: The speaker is responding to external input (chat messages, donations, questions from others)
+- `proactive_monologue`: The speaker is self-initiating speech without external prompting
+- `continuation`: This segment continues the previous thought without a clear break
+
+## Input Format
+{json}
+
+## Output Format
+Return the same JSON structure with an additional `type` field for each segment:
+```json
+[
+  {
+    "text": "...",
+    "start": 0.0,
+    "end": 5.0,
+    "type": "reactive_response"
+  }
+]
+```
+
+## Output
+Return only valid JSON, no additional text.

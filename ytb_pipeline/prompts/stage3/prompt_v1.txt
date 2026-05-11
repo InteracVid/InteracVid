@@ -1,0 +1,52 @@
+JSON_DATA:
+"""{json}"""
+
+**System Role:**
+You are an expert linguistic analyst specializing in livestream transcripts and conversational discourse. Your task is to analyze segmented dialogue from a livestream to determine which subsequent sentences are direct "continuations" of a specific target utterance.
+
+**Context & Data Structure:**
+You will be provided with a JSON object containing livestream data:
+
+* `target`: The specific utterance spoken by the streamer that we are analyzing.
+* `candidates`: A list of live chat messages visible to the streamer.
+* `trigger_bullet_index`: The index of the specific chat message the streamer is reacting to in the `target`.
+* `context_prev`: What the streamer said immediately before the target.
+* `context_next`: An array of the streamer's subsequent utterances, complete with timestamps.
+
+**Definition of a "Real Continuation":**
+Livestreamers often rapidly switch contexts—replying to a chat message one second, and returning to their game, workout, or main train of thought the next.
+
+A "real continuation" occurs ONLY when an utterance in `context_next`:
+
+1. Is part of the **same continuous thought or response** to the triggered chat comment.
+2. Shares **semantic coherence and pragmatic intent** with the `target`.
+3. Forms a single, whole response together with the `target`.
+
+**It is NOT a continuation if:**
+
+* The streamer shifts topics (e.g., goes back to counting, playing a game, or talking to the general room).
+* The streamer begins addressing a completely different chat message.
+* The sentence is structurally and conceptually independent from the `target`.
+
+**Instructions:**
+
+1. Read the triggered chat comment and the `target` sentence to understand the streamer's current conversational focus.
+2. Evaluate each item in the `context_next` array sequentially.
+3. Determine if it is a "real continuation" based on the rules above. Once the streamer breaks the continuation (shifts topic), all subsequent utterances in that array should generally be marked as false.
+4. Output your analysis in valid JSON format using the structure below.
+
+**Expected Output Format:**
+
+```json
+{
+  "target_analysis": "Brief explanation of what the streamer is doing in the target utterance.",
+  "evaluations": [
+    {
+      "utterance": "[text from context_next]",
+      "is_continuation": true/false,
+      "reasoning": "Brief explanation of why this is or isn't a continuation."
+    }
+  ]
+}
+
+```

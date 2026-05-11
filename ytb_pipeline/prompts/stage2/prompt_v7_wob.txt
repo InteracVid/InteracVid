@@ -1,0 +1,65 @@
+JSON_DATA:
+"""{json}"""
+
+You are an expert AI data annotator specializing in live stream transcript analysis. Your task is to classify each sentence in a provided transcript into one of three categories: `reactive_response`, `proactive_monologue`, or `continuation`.
+
+**Important Context Rules:**
+1. **Holistic View & ASR Tolerance:** Treat the JSON array as a continuous transcript. Look past ASR errors, phonetic misspellings, and stuttering to grasp the true intent of the speaker using the surrounding context.
+2. **The "Audience Address" vs. "Audience Reaction" Rule:** Streamers often talk *to* their audience proactively (e.g., "How are you guys doing?", "You won't believe this, chat", "I love you guys"). These are PROACTIVE MONOLOGUES. Do NOT classify a sentence as reactive just because it contains the words "you" or "chat." A reactive response REQUIRES a specific, external stimulus.
+
+**Input:** The JSON array of sentence objects.
+**Output:** The same JSON array with two new fields `"type"` and `"reason"`.
+
+### Stricter Classification Definitions
+
+**1. REACTIVE RESPONSE (`reactive_response`) [STRICT]**
+* **Definition:** A direct, specific reaction to an external stimulus from the human audience (a specific chat message, a donation alert, a new subscriber).
+* **Key Indicators:**
+  * **Answering a Specific Phantom Question:** Providing specific information without setup (e.g., "No, I'm playing on PC, not console.")
+  * **Direct Acknowledgements:** "Thanks for the 5 gifted subs, [Username]." or "Yeah, that's a good point about the sword."
+  * **The Pivot:** An abrupt interruption of their current thought to address a specific chat event.
+
+**2. CONTINUATION (`continuation`) [STRICT]**
+* **Definition:** An unbroken, direct semantic flow from the *immediately preceding* sentence. It is functionally the second half of a single thought.
+* **Key Indicators:**
+  * **Dependency:** If read in completely isolated vacuum, it makes no sense grammatically or logically (e.g., "Because I didn't have enough mana.", "...and then he just ran away.").
+  * **Do NOT use for broad topic continuation:** If the speaker finishes a complete thought, takes a breath, and starts a *new* standalone sentence about the same general topic, that is a NEW Monologue or Response, NOT a continuation.
+  * **Unbreakable Link:** The semantic glue must be extremely tight. 
+  * **Temporal Continuity:** The starting time of the sentence should directly follow the end of the last.
+
+**3. PROACTIVE MONOLOGUE (`proactive_monologue`) [DEFAULT]**
+* **Definition:** Any self-initiated thought, game commentary, or general audience address that is not a direct reaction to a specific chat message.
+* **Key Indicators:**
+  * **General Audience Engagement:** "What do you guys think?", "Let me show you this trick." (These are proactive performances, not reactions).
+  * **Game Commentary & Reactions:** "Oh my god, I died!", "I need to reload."
+  * **Storytelling & Train of Thought:** Initiating a new angle on a topic, telling a story, or thinking out loud.
+
+### Decision Logic (Chain of Thought)
+
+Process the transcript sequentially. For every sentence, apply this strict filtering:
+
+1. **Check CONTINUATION (The Unbreakable Link Test):**
+   * Is this functionally the second half of the *exact same specific thought* as the previous sentence? Is it grammatically or logically dependent on the immediate predecessor?
+   * Does the time of this sentence directly follows the previous one?
+   * *If NO (it can stand on its own as a new thought, even on the same topic) -> Move to step 2.*
+   * *If YES -> Label `continuation`.*
+
+2. **Check REACTIVE (The Specific Stimulus Test):**
+   * Is the speaker answering a specific, invisible question from the chat, or reacting to a specific alert/user?
+   * (Reminder: General addresses like "Look at this, chat" are PROACTIVE).
+   * *If YES -> Label `reactive_response`.*
+
+3. **Default to PROACTIVE (The Self-Initiated/Game Test):**
+   * If it is a self-initiated thought, a reaction to the game, a general address to the audience, or a completely new angle on a previous topic, it belongs here.
+   * *Label `proactive_monologue`.*
+
+### JSON Output Schema
+[
+  {
+    "start": "00:00:00",
+    "end": "00:00:05",
+    "text": "original text here",
+    "type": "proactive_monologue",
+    "reason": "Proactively addressing the audience, not reacting to a specific message."
+  }
+]

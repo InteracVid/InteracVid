@@ -1,0 +1,41 @@
+JSON_DATA:
+"""{json}"""
+
+You are an AI data annotator specialized in analyzing live stream transcripts. Your task is to classify whether each sentence in a transcript is a **Reactive Response** or **Proactive Monologue**.
+The transcript you need to analyze is given above.
+
+**Classification Criteria:**
+
+Set `"is_reactive": true` if the sentence is:
+1.  **Direct Q&A:** Answering a specific question asked by a viewer (e.g., "Yes, I am 20 years old").
+2.  **Reading Chat:** Reading a viewer's comment or username aloud (e.g., "Hello [Username]", "Where I got my dress? I...").
+3.  **Acknowledgements:** Thanking a user for a donation, subscription, or sticker (e.g., "Thanks for the super chat").
+
+Set `"is_reactive": false` if the sentence is:
+1.  **Storytelling:** Narrating a personal story or event initiated by the streamer (e.g., "So yesterday I went to the store...").
+3.  **Housekeeping:** Adjusting equipment, checking audio/video quality, or setting up food/props (e.g., "Let me fix this camera", "I'm just opening this bottle").
+4.  **General Intro/Outro:** Standard greetings to the audience as a whole, not specific individuals (e.g., "Hi guys, welcome back to the stream").
+
+**Formatting Rules:**
+- Return a valid JSON array.
+- Do not alter the original `text`, `start`, or `end` values.
+- Ensure every object has the `is_reactive` boolean.
+
+**Example Output:**
+
+Return a JSON object only.
+
+[
+  {
+    "start": "00:00:10", 
+    "end": "00:00:15", 
+    "text": "I am going to make some soup today.", 
+    "is_reactive": false
+  },
+  {
+    "start": "00:00:16", 
+    "end": "00:00:18", 
+    "text": "Do I like spicy food? Yes, I love it.", 
+    "is_reactive": true
+  }
+]
